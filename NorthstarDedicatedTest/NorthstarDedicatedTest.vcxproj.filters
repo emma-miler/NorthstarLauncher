@@ -1440,6 +1440,9 @@
     <ClInclude Include="audio.h">
       <Filter>Header Files\Client</Filter>
     </ClInclude>
+    <ClInclude Include="scriptmonarchbrowser.h">
+      <Filter>Header Files\Client</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -1568,6 +1571,9 @@
     <ClCompile Include="audio.cpp">
       <Filter>Source Files\Client</Filter>
     </ClCompile>
+    <ClCompile Include="scriptmonarchbrowser.cpp">
+      <Filter>Source Files\Client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="audio_asm.asm">
@@ -1659,6 +1665,5 @@
     <None Include="include\crypto\dso_conf.h.in">
       <Filter>Header Files\include\openssl\crypto</Filter>
     </None>
-    <None Include="..\Northstar-Legal.txt" />
   </ItemGroup>
 </Project>

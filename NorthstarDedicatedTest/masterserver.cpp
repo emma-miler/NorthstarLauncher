@@ -146,6 +146,21 @@ RemoteServerInfo::RemoteServerInfo(const char* newId, const char* newName, const
 	maxPlayers = newMaxPlayers;
 }
 
+RemoteMonarchInstanceInfo::RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newPort, const bool newSecure)
+{
+	secure = newSecure;
+
+	strncpy((char*)id, newId, sizeof(id));
+	id[sizeof(id) - 1] = 0;
+
+	strncpy((char*)id, newId, sizeof(id));
+	id[sizeof(id) - 1] = 0;
+	strncpy((char*)name, newName, sizeof(name));
+	name[sizeof(name) - 1] = 0;
+	strncpy((char*)port, newPort, sizeof(port));
+	name[sizeof(port) - 1] = 0;
+}
+
 void MasterServerManager::SetCommonHttpClientOptions(CURL* curl)
 {
 	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
@@ -167,6 +182,7 @@ void MasterServerManager::ClearServerList()
 
 	m_requestingServerList = false;
 }
+
 
 size_t CurlWriteToStringBufferCallback(char* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -242,6 +258,56 @@ void MasterServerManager::AuthenticateOriginWithMasterServer(char* uid, char* or
 
 	requestThread.detach();
 }
+
+void MasterServerManager::RequestMonarchInstanceList()
+{
+	// do this here so it's instantly set on call for scripts
+	m_scriptRequestingMonarchServerList = true;
+	spdlog::info("Entering RequestMonarchInstanceList function");
+	std::thread requestThread([this]()
+		{
+			// make sure we never have 2 threads writing at once
+			// i sure do hope this is actually threadsafe
+			spdlog::info("Entered thread");
+			while (m_requestingMonarchServerList)
+				spdlog::info("Sleeping 100");
+				Sleep(100);
+
+			spdlog::info("Got past sleep thingy");
+
+			m_requestingMonarchServerList = true;
+			m_scriptRequestingMonarchServerList = true;
+
+			spdlog::info("Requesting monarch instance list");
+
+			
+			if (true)
+			{
+				m_successfullyConnected = true;
+
+				spdlog::info("Got 2 servers");
+
+				RemoteMonarchInstanceInfo* newServer = nullptr;
+				RemoteMonarchInstanceInfo* newServer1 = nullptr;
+
+				newServer = &m_remoteMonarchInstances.emplace_back("a", "test 1", "80", false);
+				newServer1 = &m_remoteMonarchInstances.emplace_back("b", "test 2", "81", false);
+			}
+			else
+			{
+				spdlog::error("Failed requesting servers: error template error for debugging");
+				m_successfullyConnected = false;
+			}
+
+			// we goto this instead of returning so we always hit this
+		REQUEST_END_CLEANUP:
+			m_requestingMonarchServerList = false;
+			m_scriptRequestingMonarchServerList = false;
+		});
+
+	requestThread.detach();
+}
+
 
 void MasterServerManager::RequestServerList()
 {
@@ -671,6 +737,12 @@ void MasterServerManager::AuthenticateWithServer(char* uid, char* playerToken, c
 
 				if (connectionInfoJson.HasMember("error"))
 				{
+					if (connectionInfoJson["error"].HasMember("enum"))
+					{
+						spdlog::error("Hitting this codepath");
+						spdlog::error("Failed to authenticate to server: {}", connectionInfoJson["error"]["enum"].GetString());
+						goto REQUEST_END_CLEANUP;
+					}
 					spdlog::error("Failed reading masterserver response: got fastify error response");
 					spdlog::error(readBuffer);
 					goto REQUEST_END_CLEANUP;

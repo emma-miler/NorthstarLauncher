@@ -12,6 +12,7 @@
 #include "serverauthentication.h"
 #include "scriptmodmenu.h"
 #include "scriptserverbrowser.h"
+#include "scriptmonarchbrowser.h"
 #include "keyvalues.h"
 #include "masterserver.h"
 #include "gameutils.h"
@@ -109,6 +110,7 @@ bool InitialiseNorthstar()
         AddDllLoadCallback("engine.dll", InitialiseChatCommands);
         AddDllLoadCallback("client.dll", InitialiseScriptModMenu);
         AddDllLoadCallback("client.dll", InitialiseScriptServerBrowser);
+        AddDllLoadCallback("client.dll", InitialiseScriptMonarchBrowser);
         AddDllLoadCallback("localize.dll", InitialiseModLocalisation);
         AddDllLoadCallback("engine.dll", InitialiseClientAuthHooks);
         AddDllLoadCallback("client.dll", InitialiseLatencyFleX);

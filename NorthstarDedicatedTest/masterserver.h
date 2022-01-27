@@ -32,6 +32,21 @@ public:
 	RemoteServerInfo(const char* newId, const char* newName, const char* newDescription, const char* newMap, const char* newPlaylist, int newPlayerCount, int newMaxPlayers, bool newRequiresPassword);
 };
 
+class RemoteMonarchInstanceInfo
+{
+public:
+	char id[33]; // 32 bytes + nullterminator
+
+	// server info
+	char name[64];
+	char port[6];
+	bool secure;
+
+public:
+	RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newPort, const bool newSecure);
+};
+
+
 struct RemoteServerConnectionInfo
 {
 public:
@@ -68,6 +83,8 @@ private:
 	bool m_requestingServerList = false;
 	bool m_authenticatingWithGameServer = false;
 
+	bool m_requestingMonarchServerList = false;
+
 public:
 	char m_ownServerId[33];
 	char m_ownServerAuthToken[33];
@@ -77,6 +94,8 @@ public:
 	std::string ns_auth_srvName; // Unicode unescaped version of Cvar_ns_auth_servername for support in cjk characters
 	std::string ns_auth_srvDesc; // Unicode unescaped version of Cvar_ns_auth_serverdesc for support in cjk characters
 
+	std::string m_lastErrorCode;
+
 	bool m_bOriginAuthWithMasterServerDone = false;
 	bool m_bOriginAuthWithMasterServerInProgress = false;
 
@@ -84,6 +103,9 @@ public:
 	bool m_savingPersistentData = false;
 
 	bool m_scriptRequestingServerList = false;
+
+	bool m_scriptRequestingMonarchServerList = false;
+
 	bool m_successfullyConnected = true;
 
 	bool m_bNewgameAfterSelfAuth = false;
@@ -95,6 +117,8 @@ public:
 
 	std::vector<RemoteServerInfo> m_remoteServers;
 
+	std::vector<RemoteMonarchInstanceInfo> m_remoteMonarchInstances;
+
 	bool m_bHasMainMenuPromoData = false;
 	MainMenuPromoData m_MainMenuPromoData;
 
@@ -104,6 +128,7 @@ private:
 public:
 	MasterServerManager();
 	void ClearServerList();
+	void RequestMonarchInstanceList();
 	void RequestServerList();
 	void RequestMainMenuPromos();
 	void AuthenticateOriginWithMasterServer(char* uid, char* originToken);

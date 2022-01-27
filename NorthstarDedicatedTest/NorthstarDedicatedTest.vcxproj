@@ -537,6 +537,7 @@
     <ClInclude Include="rpakfilesystem.h" />
     <ClInclude Include="scriptbrowserhooks.h" />
     <ClInclude Include="scriptmainmenupromos.h" />
+    <ClInclude Include="scriptmonarchbrowser.h" />
     <ClInclude Include="securitypatches.h" />
     <ClInclude Include="scriptmodmenu.h" />
     <ClInclude Include="scriptserverbrowser.h" />
@@ -583,6 +584,7 @@
     <ClCompile Include="rpakfilesystem.cpp" />
     <ClCompile Include="scriptbrowserhooks.cpp" />
     <ClCompile Include="scriptmainmenupromos.cpp" />
+    <ClCompile Include="scriptmonarchbrowser.cpp" />
     <ClCompile Include="securitypatches.cpp" />
     <ClCompile Include="scriptmodmenu.cpp" />
     <ClCompile Include="scriptserverbrowser.cpp" />
@@ -625,7 +627,7 @@
     <None Include="include\spdlog\fmt\bundled\LICENSE.rst" />
   </ItemGroup>
   <ItemGroup>
-	  <MASM Include="audio_asm.asm" />
+    <MASM Include="audio_asm.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
