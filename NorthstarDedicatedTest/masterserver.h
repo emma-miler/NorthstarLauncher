@@ -39,11 +39,12 @@ public:
 
 	// server info
 	char name[64];
+	char hostname[128];
 	char port[6];
 	bool secure;
 
 public:
-	RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newPort, const bool newSecure);
+	RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newHostName, const char* newPort, const bool newSecure);
 };
 
 
@@ -83,7 +84,7 @@ private:
 	bool m_requestingServerList = false;
 	bool m_authenticatingWithGameServer = false;
 
-	bool m_requestingMonarchServerList = false;
+	bool m_requestingMonarchInstanceList = false;
 
 public:
 	char m_ownServerId[33];
@@ -104,7 +105,7 @@ public:
 
 	bool m_scriptRequestingServerList = false;
 
-	bool m_scriptRequestingMonarchServerList = false;
+	bool m_scriptRequestingMonarchInstanceList = false;
 
 	bool m_successfullyConnected = true;
 
@@ -128,6 +129,7 @@ private:
 public:
 	MasterServerManager();
 	void ClearServerList();
+	void ClearInstanceList();
 	void RequestMonarchInstanceList();
 	void RequestServerList();
 	void RequestMainMenuPromos();

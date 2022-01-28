@@ -146,19 +146,17 @@ RemoteServerInfo::RemoteServerInfo(const char* newId, const char* newName, const
 	maxPlayers = newMaxPlayers;
 }
 
-RemoteMonarchInstanceInfo::RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newPort, const bool newSecure)
+RemoteMonarchInstanceInfo::RemoteMonarchInstanceInfo(const char* newId, const char* newName, const char* newHostName, const char* newPort, const bool newSecure)
 {
 	secure = newSecure;
-
-	strncpy((char*)id, newId, sizeof(id));
-	id[sizeof(id) - 1] = 0;
-
 	strncpy((char*)id, newId, sizeof(id));
 	id[sizeof(id) - 1] = 0;
 	strncpy((char*)name, newName, sizeof(name));
 	name[sizeof(name) - 1] = 0;
+	strncpy((char*)hostname, newHostName, sizeof(hostname));
+	hostname[sizeof(hostname) - 1] = 0;
 	strncpy((char*)port, newPort, sizeof(port));
-	name[sizeof(port) - 1] = 0;
+	port[sizeof(port) - 1] = 0;
 }
 
 void MasterServerManager::SetCommonHttpClientOptions(CURL* curl)
@@ -183,6 +181,17 @@ void MasterServerManager::ClearServerList()
 	m_requestingServerList = false;
 }
 
+
+
+void MasterServerManager::ClearInstanceList()
+{
+	// this doesn't really do anything lol, probably isn't threadsafe
+	m_requestingMonarchInstanceList = true;
+
+	m_remoteMonarchInstances.clear();
+
+	m_scriptRequestingMonarchInstanceList = false;
+}
 
 size_t CurlWriteToStringBufferCallback(char* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -262,21 +271,21 @@ void MasterServerManager::AuthenticateOriginWithMasterServer(char* uid, char* or
 void MasterServerManager::RequestMonarchInstanceList()
 {
 	// do this here so it's instantly set on call for scripts
-	m_scriptRequestingMonarchServerList = true;
+	m_scriptRequestingMonarchInstanceList = true;
 	spdlog::info("Entering RequestMonarchInstanceList function");
 	std::thread requestThread([this]()
 		{
 			// make sure we never have 2 threads writing at once
 			// i sure do hope this is actually threadsafe
 			spdlog::info("Entered thread");
-			while (m_requestingMonarchServerList)
+			while (m_requestingMonarchInstanceList)
 				spdlog::info("Sleeping 100");
 				Sleep(100);
 
 			spdlog::info("Got past sleep thingy");
 
-			m_requestingMonarchServerList = true;
-			m_scriptRequestingMonarchServerList = true;
+			m_requestingMonarchInstanceList = true;
+			m_scriptRequestingMonarchInstanceList = true;
 
 			spdlog::info("Requesting monarch instance list");
 
@@ -285,13 +294,81 @@ void MasterServerManager::RequestMonarchInstanceList()
 			{
 				m_successfullyConnected = true;
 
-				spdlog::info("Got 2 servers");
+				std::string path = "test.json";
+				std::ifstream file(path, std::ios::in | std::ios::binary);
+				const std::size_t& size = std::filesystem::file_size(path);
+				std::string content(size, '\0');
+				file.read(content.data(), size);
 
-				RemoteMonarchInstanceInfo* newServer = nullptr;
-				RemoteMonarchInstanceInfo* newServer1 = nullptr;
+				rapidjson_document serverInfoJson;
+				serverInfoJson.Parse(content.c_str());
 
-				newServer = &m_remoteMonarchInstances.emplace_back("a", "test 1", "80", false);
-				newServer1 = &m_remoteMonarchInstances.emplace_back("b", "test 2", "81", false);
+				if (serverInfoJson.HasParseError())
+				{
+					spdlog::error("Failed reading masterserver response: encountered parse error \"{}\"", rapidjson::GetParseError_En(serverInfoJson.GetParseError()));
+					goto REQUEST_END_CLEANUP;
+				}
+
+				if (serverInfoJson.IsObject() && serverInfoJson.HasMember("error"))
+				{
+					spdlog::error("Failed reading masterserver response: got fastify error response");
+					spdlog::error(content);
+					goto REQUEST_END_CLEANUP;
+				}
+
+				if (!serverInfoJson.IsArray())
+				{
+					spdlog::error("Failed reading masterserver response: root object is not an array");
+					goto REQUEST_END_CLEANUP;
+				}
+
+				rapidjson::GenericArray<false, rapidjson_document::GenericValue> serverArray = serverInfoJson.GetArray();
+
+				spdlog::info("Got {} servers", serverArray.Size());
+
+				for (auto& serverObj : serverArray)
+				{
+					if (!serverObj.IsObject())
+					{
+						spdlog::error("Failed reading masterserver response: member of server array is not an object");
+						goto REQUEST_END_CLEANUP;
+					}
+
+					// todo: verify json props are fine before adding to m_remoteServers
+					if (!serverObj.HasMember("id") || !serverObj["id"].IsString()
+						|| !serverObj.HasMember("name") || !serverObj["name"].IsString()
+						|| !serverObj.HasMember("host") || !serverObj["host"].IsString()
+						|| !serverObj.HasMember("port") || !serverObj["port"].IsInt()
+						|| !serverObj.HasMember("secure") || !serverObj["secure"].IsBool()
+					)
+					{
+						spdlog::error("Failed reading masterserver response: malformed server object");
+						continue;
+					};
+
+					const char* id = serverObj["id"].GetString();
+
+					RemoteMonarchInstanceInfo* newServer = nullptr;
+
+					bool createNewServerInfo = true;
+					for (RemoteMonarchInstanceInfo& server : m_remoteMonarchInstances)
+					{
+						// if server already exists, update info rather than adding to it
+						if (!strncmp((const char*)server.id, id, 32))
+						{
+							server = RemoteMonarchInstanceInfo(id, serverObj["name"].GetString(), serverObj["host"].GetString(), std::to_string(serverObj["port"].GetInt()).c_str(), serverObj["secure"].GetBool());
+							newServer = &server;
+							createNewServerInfo = false;
+							break;
+						}
+					}
+
+					// server didn't exist
+					if (createNewServerInfo)
+						newServer = &m_remoteMonarchInstances.emplace_back(id, serverObj["name"].GetString(), serverObj["host"].GetString(), std::to_string(serverObj["port"].GetInt()).c_str(), serverObj["secure"].GetBool());
+
+					spdlog::info("Server {} with name {} on port {} is secure {}", serverObj["name"].GetString(), serverObj["host"].GetString(), std::to_string(serverObj["port"].GetInt()).c_str(), serverObj["secure"].GetBool());
+				}
 			}
 			else
 			{
@@ -301,8 +378,8 @@ void MasterServerManager::RequestMonarchInstanceList()
 
 			// we goto this instead of returning so we always hit this
 		REQUEST_END_CLEANUP:
-			m_requestingMonarchServerList = false;
-			m_scriptRequestingMonarchServerList = false;
+			m_requestingMonarchInstanceList = false;
+			m_scriptRequestingMonarchInstanceList = false;
 		});
 
 	requestThread.detach();
