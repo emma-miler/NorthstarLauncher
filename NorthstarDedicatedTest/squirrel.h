@@ -193,6 +193,42 @@ template <ScriptContext context> class SquirrelManager
 		}
 	}
 
+	CompileBufferState CompileCode(const char* code) { return CompileBufferState(std::string(code)); }
+
+	void ExecuteCodeCached(CompileBufferState bufferState)
+	{
+		// ttf2sdk checks ThreadIsInMainThread here, might be good to do that? doesn't seem like an issue rn tho
+
+		if (!sqvm)
+		{
+			spdlog::error("Cannot execute code, {} squirrel vm is not initialised", GetContextName(context));
+			return;
+		}
+
+		SQRESULT compileResult;
+		if (context == ScriptContext::CLIENT || context == ScriptContext::UI)
+			compileResult = ClientSq_compilebuffer(sqvm2, &bufferState, "console", -1, context);
+		else if (context == ScriptContext::SERVER)
+			compileResult = ServerSq_compilebuffer(sqvm2, &bufferState, "console", -1, context);
+
+		spdlog::info("sq_compilebuffer returned {}", compileResult);
+		if (compileResult >= 0)
+		{
+			if (context == ScriptContext::CLIENT || context == ScriptContext::UI)
+			{
+				ClientSq_pushroottable(sqvm2);
+				SQRESULT callResult = ClientSq_call(sqvm2, 1, false, false);
+				spdlog::info("sq_call returned {}", callResult);
+			}
+			else if (context == ScriptContext::SERVER)
+			{
+				ServerSq_pushroottable(sqvm2);
+				SQRESULT callResult = ServerSq_call(sqvm2, 1, false, false);
+				spdlog::info("sq_call returned {}", callResult);
+			}
+		}
+	}
+
 	void AddFuncRegistration(std::string returnType, std::string name, std::string argTypes, std::string helpText, SQFunction func)
 	{
 		SQFuncRegistration* reg = new SQFuncRegistration;

@@ -59,8 +59,7 @@ SQRESULT SQ_IsPlayerIndexLocalPlayer(void* sqvm)
 
 void InitialiseMiscServerScriptCommand(HMODULE baseAddress)
 {
-	g_ServerSquirrelManager->AddFuncRegistration(
-		"void", "NSEarlyWritePlayerIndexPersistenceForLeave", "int playerIndex", "", SQ_EarlyWritePlayerIndexPersistenceForLeave);
+	g_ServerSquirrelManager->AddFuncRegistration("void", "NSEarlyWritePlayerIndexPersistenceForLeave", "int playerIndex", "", SQ_EarlyWritePlayerIndexPersistenceForLeave);
 	g_ServerSquirrelManager->AddFuncRegistration("bool", "NSIsWritingPlayerPersistence", "", "", SQ_IsWritingPlayerPersistence);
 	g_ServerSquirrelManager->AddFuncRegistration("bool", "NSIsPlayerIndexLocalPlayer", "int playerIndex", "", SQ_IsPlayerIndexLocalPlayer);
 }

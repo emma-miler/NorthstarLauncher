@@ -101,6 +101,9 @@ class ServerAuthenticationManager
 typedef void (*CBaseClient__DisconnectType)(void* self, uint32_t unknownButAlways1, const char* reason, ...);
 extern CBaseClient__DisconnectType CBaseClient__Disconnect;
 
+typedef void (*CServerGameDLL__OnRecievedSayTextMessageType)(void* self, unsigned int senderClientIndex, const char* message, char unknown);
+extern CServerGameDLL__OnRecievedSayTextMessageType CServerGameDLL__OnRecievedSayTextMessage;
+
 void InitialiseServerAuthentication(HMODULE baseAddress);
 void InitialiseServerAuthenticationServerDLL(HMODULE baseAddress);
 
