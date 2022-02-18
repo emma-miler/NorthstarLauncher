@@ -1440,7 +1440,13 @@
     <ClInclude Include="audio.h">
       <Filter>Header Files\Client</Filter>
     </ClInclude>
-    <ClInclude Include="scriptmonarchbrowser.h">
+    <ClInclude Include="buildainfile.h">
+      <Filter>Header Files\Server</Filter>
+    </ClInclude>
+    <ClInclude Include="bitbuf.h">
+      <Filter>Header Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="configurables.h">
       <Filter>Header Files\Client</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1571,7 +1577,10 @@
     <ClCompile Include="audio.cpp">
       <Filter>Source Files\Client</Filter>
     </ClCompile>
-    <ClCompile Include="scriptmonarchbrowser.cpp">
+    <ClCompile Include="buildainfile.cpp">
+      <Filter>Source Files\Server</Filter>
+    </ClCompile>
+    <ClCompile Include="configurables.cpp">
       <Filter>Source Files\Client</Filter>
     </ClCompile>
   </ItemGroup>
