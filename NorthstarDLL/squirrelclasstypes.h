@@ -123,9 +123,22 @@ class SquirrelMessage
 {
   public:
 	std::string functionName;
+	SQObject* functionObject;
+	bool useFunctionObject;
 	FunctionVector args;
 	bool isExternal = false;
 	SquirrelMessage_External_Pop externalFunc = NULL;
+
+	SquirrelMessage(std::string name, FunctionVector args) : functionName(name), args(args), useFunctionObject(false), isExternal(false) {};
+
+	SquirrelMessage(SQObject* functionObject, FunctionVector args)
+		: functionObject(functionObject), args(args), useFunctionObject(true), isExternal(false) {};
+
+	SquirrelMessage(std::string name, SquirrelMessage_External_Pop externalFunc)
+		: functionName(name), externalFunc(externalFunc), useFunctionObject(false), isExternal(true) {};
+
+	SquirrelMessage(SQObject* functionObject, SquirrelMessage_External_Pop externalFunc)
+		: functionObject(functionObject), externalFunc(externalFunc), useFunctionObject(true), isExternal(true) {};
 };
 
 class SquirrelMessageBuffer
@@ -231,7 +244,7 @@ typedef SQRESULT (*sq_setuserdatatypeidType)(HSquirrelVM* sqvm, SQInteger iStack
 typedef void* (*sq_getentityfrominstanceType)(CSquirrelVM* sqvm, SQObject* pInstance, char** ppEntityConstant);
 typedef char** (*sq_GetEntityConstantType)();
 
-typedef int (*sq_getfunctionType)(HSquirrelVM* sqvm, const char* name, SQObject* returnObj, const char* signature);
+typedef int (*sq_findfunctionType)(HSquirrelVM* sqvm, const char* name, SQObject* returnObj, const char* signature);
 
 #pragma endregion
 

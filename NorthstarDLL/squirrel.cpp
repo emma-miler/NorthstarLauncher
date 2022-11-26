@@ -122,7 +122,7 @@ const char* SQTypeNameFromID(int type)
 		return "thread";
 	case OT_FUNCPROTO:
 		return "function";
-	case OT_CLAAS:
+	case OT_CLASS:
 		return "class";
 	case OT_WEAKREF:
 		return "weakref";
@@ -144,10 +144,7 @@ const char* SQTypeNameFromID(int type)
 // Not used in this version, but will be used later
 void AsyncCall_External(ScriptContext context, const char* func_name, SquirrelMessage_External_Pop function)
 {
-	SquirrelMessage message {};
-	message.functionName = func_name;
-	message.isExternal = true;
-	message.externalFunc = function;
+	SquirrelMessage message {func_name, function};
 	switch (context)
 	{
 	case ScriptContext::CLIENT:
@@ -519,7 +516,7 @@ template <ScriptContext context> void SquirrelManager<context>::ProcessMessageBu
 	SquirrelMessage message = maybeMessage.value();
 
 	SQObject functionobj {};
-	int result = sq_getfunction(m_pSQVM->sqvm, message.functionName.c_str(), &functionobj, 0);
+	int result = sq_findfunction(m_pSQVM->sqvm, message.functionName.c_str(), &functionobj, 0);
 	if (result != 0) // This func returns 0 on success for some reason
 	{
 		spdlog::error(
@@ -544,6 +541,13 @@ template <ScriptContext context> void SquirrelManager<context>::ProcessMessageBu
 	}
 
 	_call(m_pSQVM->sqvm, message.args.size());
+}
+
+ADD_SQFUNC("void", NSTest, "void functionref( string )", "", ScriptContext::UI) {
+	SQObject callback {};
+	auto testobj = g_pSquirrel<ScriptContext::UI>;
+	SQRefCountedObj test = g_pSquirrel<context>->getobject(sqvm, 1);
+	return SQRESULT_NOTNULL;
 }
 
 ON_DLL_LOAD_RELIESON("client.dll", ClientSquirrel, ConCommand, (CModule module))
@@ -599,6 +603,7 @@ ON_DLL_LOAD_RELIESON("client.dll", ClientSquirrel, ConCommand, (CModule module))
 	g_pSquirrel<ScriptContext::CLIENT>->__sq_getasset = module.Offset(0x6010).As<sq_getassetType>();
 	g_pSquirrel<ScriptContext::CLIENT>->__sq_getuserdata = module.Offset(0x63D0).As<sq_getuserdataType>();
 	g_pSquirrel<ScriptContext::CLIENT>->__sq_getvector = module.Offset(0x6140).As<sq_getvectorType>();
+	g_pSquirrel<ScriptContext::CLIENT>->__sq_getobject = module.Offset(0x6167).As<sq_getobjectType>();
 	g_pSquirrel<ScriptContext::UI>->__sq_getstring = g_pSquirrel<ScriptContext::CLIENT>->__sq_getstring;
 	g_pSquirrel<ScriptContext::UI>->__sq_getinteger = g_pSquirrel<ScriptContext::CLIENT>->__sq_getinteger;
 	g_pSquirrel<ScriptContext::UI>->__sq_getfloat = g_pSquirrel<ScriptContext::CLIENT>->__sq_getfloat;
@@ -623,8 +628,8 @@ ON_DLL_LOAD_RELIESON("client.dll", ClientSquirrel, ConCommand, (CModule module))
 
 	// Message buffer stuff
 	g_pSquirrel<ScriptContext::UI>->messageBuffer = g_pSquirrel<ScriptContext::CLIENT>->messageBuffer;
-	g_pSquirrel<ScriptContext::CLIENT>->__sq_getfunction = module.Offset(0x572FB0).As<sq_getfunctionType>();
-	g_pSquirrel<ScriptContext::UI>->__sq_getfunction = g_pSquirrel<ScriptContext::CLIENT>->__sq_getfunction;
+	g_pSquirrel<ScriptContext::CLIENT>->__sq_findfunction = module.Offset(0x572FB0).As<sq_findfunctionType>();
+	g_pSquirrel<ScriptContext::UI>->__sq_findfunction = g_pSquirrel<ScriptContext::CLIENT>->__sq_findfunction;
 
 	MAKEHOOK(
 		module.Offset(0x108E0),
@@ -655,8 +660,8 @@ ON_DLL_LOAD_RELIESON("client.dll", ClientSquirrel, ConCommand, (CModule module))
 	StubUnsafeSQFuncs<ScriptContext::CLIENT>();
 	StubUnsafeSQFuncs<ScriptContext::UI>();
 
-	g_pSquirrel<ScriptContext::CLIENT>->__sq_getfunction = module.Offset(0x6CB0).As<sq_getfunctionType>();
-	g_pSquirrel<ScriptContext::UI>->__sq_getfunction = g_pSquirrel<ScriptContext::CLIENT>->__sq_getfunction;
+	g_pSquirrel<ScriptContext::CLIENT>->__sq_findfunction = module.Offset(0x6CB0).As<sq_findfunctionType>();
+	g_pSquirrel<ScriptContext::UI>->__sq_findfunction = g_pSquirrel<ScriptContext::CLIENT>->__sq_findfunction;
 }
 
 ON_DLL_LOAD_RELIESON("server.dll", ServerSquirrel, ConCommand, (CModule module))
@@ -707,7 +712,7 @@ ON_DLL_LOAD_RELIESON("server.dll", ServerSquirrel, ConCommand, (CModule module))
 
 	g_pSquirrel<ScriptContext::SERVER>->logger = NS::log::SCRIPT_SV;
 	// Message buffer stuff
-	g_pSquirrel<ScriptContext::SERVER>->__sq_getfunction = module.Offset(0x6C85).As<sq_getfunctionType>();
+	g_pSquirrel<ScriptContext::SERVER>->__sq_findfunction = module.Offset(0x6C85).As<sq_findfunctionType>();
 
 	MAKEHOOK(
 		module.Offset(0x1DD10),

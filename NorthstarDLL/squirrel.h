@@ -90,7 +90,7 @@ class SquirrelManagerBase
 
 	sq_createuserdataType __sq_createuserdata;
 	sq_setuserdatatypeidType __sq_setuserdatatypeid;
-	sq_getfunctionType __sq_getfunction;
+	sq_findfunctionType __sq_findfunction;
 
 	sq_getentityfrominstanceType __sq_getentityfrominstance;
 	sq_GetEntityConstantType __sq_GetEntityConstant_CBaseEntity;
@@ -204,15 +204,24 @@ class SquirrelManagerBase
 		return __sq_get(sqvm, stackpos);
 	}
 
+	inline SQObject* getobject(HSquirrelVM* sqvm, const SQInteger stackpos)
+	{
+		// Copied mostly from IDA but made to return a ptr instead of copying into an object
+		if (stackpos < 0)
+			return sqvm->_stack + sqvm->_top + stackpos;
+		else
+			return sqvm->_stackOfCurrentFunction + stackpos - 1;
+	}
+
 	inline Vector3 getvector(HSquirrelVM* sqvm, const SQInteger stackpos)
 	{
 		float* pRet = __sq_getvector(sqvm, stackpos);
 		return *(Vector3*)&pRet;
 	}
 
-	inline int sq_getfunction(HSquirrelVM* sqvm, const char* name, SQObject* returnObj, const char* signature)
+	inline int sq_findfunction(HSquirrelVM* sqvm, const char* name, SQObject* returnObj, const char* signature)
 	{
-		return __sq_getfunction(sqvm, name, returnObj, signature);
+		return __sq_findfunction(sqvm, name, returnObj, signature);
 	}
 
 	inline SQRESULT getasset(HSquirrelVM* sqvm, const SQInteger stackpos, const char** result)
@@ -280,6 +289,32 @@ template <ScriptContext context> class SquirrelManager : public virtual Squirrel
 		return message;
 	}
 
+	SQRESULT Call(SQRefCountedObj& functionobj)
+	{
+		// Warning!
+		// This function assumes the squirrel VM is stopped/blocked at the moment of call
+		// Calling this function while the VM is running is likely to result in a crash due to stack destruction
+		// If you want to call into squirrel asynchronously, use `AsyncCall` instead
+
+		if (!m_pSQVM || !m_pSQVM->sqvm)
+		{
+			spdlog::error(
+				"{} was called on context {} while VM was not initialized. This will crash", __FUNCTION__, GetContextName(context));
+		}
+
+		if (functionobj._Type != OT_CLOSURE && functionobj._Type != OT_NATIVECLOSURE)
+		{
+			spdlog::error(
+				"Tried executing Call on context {} with SQObject of type {}, which is not a closure.",
+				GetContextName(context),
+				static_cast<int>(functionobj._Type));
+			return SQRESULT_ERROR;
+		}
+		pushobject(m_pSQVM->sqvm, &functionobj); // Push the function object
+		pushroottable(m_pSQVM->sqvm); // Push root table
+		return _call(m_pSQVM->sqvm, 0);
+	}
+
 	SQRESULT Call(const char* funcname)
 	{
 		// Warning!
@@ -294,7 +329,7 @@ template <ScriptContext context> class SquirrelManager : public virtual Squirrel
 		}
 
 		SQObject functionobj {};
-		int result = sq_getfunction(m_pSQVM->sqvm, funcname, &functionobj, 0);
+		int result = sq_findfunction(m_pSQVM->sqvm, funcname, &functionobj, 0);
 		if (result != 0) // This func returns 0 on success for some reason
 		{
 			return SQRESULT_ERROR;
@@ -316,9 +351,43 @@ template <ScriptContext context> class SquirrelManager : public virtual Squirrel
 				"{} was called on context {} while VM was not initialized. This will crash", __FUNCTION__, GetContextName(context));
 		}
 		SQObject functionobj {};
-		int result = sq_getfunction(m_pSQVM->sqvm, funcname, &functionobj, 0);
+		int result = sq_findfunction(m_pSQVM->sqvm, funcname, &functionobj, 0);
 		if (result != 0) // This func returns 0 on success for some reason
 		{
+			return SQRESULT_ERROR;
+		}
+		pushobject(m_pSQVM->sqvm, &functionobj); // Push the function object
+		pushroottable(m_pSQVM->sqvm); // Push root table
+
+		FunctionVector functionVector;
+		SqRecurseArgs<context>(functionVector, args...);
+
+		for (auto& v : functionVector)
+		{
+			// Execute lambda to push arg to stack
+			v();
+		}
+
+		return _call(m_pSQVM->sqvm, functionVector.size());
+	}
+
+	template <typename... Args> SQRESULT Call(SQRefCountedObj& functionobj, Args... args)
+	{
+		// Warning!
+		// This function assumes the squirrel VM is stopped/blocked at the moment of call
+		// Calling this function while the VM is running is likely to result in a crash due to stack destruction
+		// If you want to call into squirrel asynchronously, use `schedule_call` instead
+		if (!m_pSQVM || !m_pSQVM->sqvm)
+		{
+			spdlog::error(
+				"{} was called on context {} while VM was not initialized. This will crash", __FUNCTION__, GetContextName(context));
+		}
+		if (functionobj._Type != OT_CLOSURE && functionobj._Type != OT_NATIVECLOSURE)
+		{
+			spdlog::error(
+				"Tried executing Call on context {} with SQObject of type {}, which is not a closure.",
+				GetContextName(context),
+				static_cast<int>(functionobj._Type));
 			return SQRESULT_ERROR;
 		}
 		pushobject(m_pSQVM->sqvm, &functionobj); // Push the function object
