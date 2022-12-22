@@ -220,4 +220,35 @@ void InitialiseLogging()
 	loggers.push_back(NS::log::fs);
 	loggers.push_back(NS::log::rpak);
 	loggers.push_back(NS::log::echo);
+
+	SetConsoleOutputCP(CP_UTF8);
+
+	auto TOP = Color(100, 115, 156).ToANSIColor();
+	auto BG = Color(65, 70, 126).ToANSIColor();
+	auto FG = Color(255, 255, 255).ToANSIColor();
+	auto RESET = "\e[0m";
+
+	// This is awful, sorry
+
+	spdlog::info("");
+	spdlog::info("{}	                 ▒▒▒▒▒▒									{}", TOP, RESET);
+	spdlog::info("{}	             ▒▒▒▒{}░░░░░░{}▒▒▒▒							{}", TOP, BG, TOP, RESET);
+	spdlog::info("{}	          ▒▒▒▒{}░░░░░░░░░░░░{}▒▒▒▒						{}", TOP, BG, TOP, RESET);
+	spdlog::info("{}	       ▒▒▒▒{}░░░{}█▄▄{}░░░░░░{}▄▄█{}░░░{}▒▒▒▒			{}", TOP, BG, FG, BG, FG, BG, TOP, RESET);
+	spdlog::info("{}	   ▒▒▒▒{}░░░░░░░{}▀██████████▀{}░░░░░░░{}▒▒▒▒			{}", TOP, BG, FG, BG, TOP, RESET);
+	spdlog::info("{}	   ░░░░░░░░░░░░░{}████████{}░░░░░░░░░░░░░				{}", BG, FG, BG, RESET);
+	spdlog::info("{}	 ░░░░░░░░░░░░░{}████████████{}░░░░░░░░░░░░░				{}", BG, FG, BG, RESET);
+	spdlog::info("{}	   ░░░░░░░░░{}███▀▀██████▀▀███{}░░░░░░░░░				{}", BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░░{}██{}░{}▄█▄{}░{}██{}░{}▄█▄{}░{}██{}░░░░░░░ {}", BG, FG, BG, FG, BG, FG, BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░{}▐█{}░░{}███▀██▀███{}░░{}██{}░░░░░░ 		{}", BG, FG, BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░{}██▄{}░{}██▌{}░░░░{}▐██{}░░{}▄█{}░░░░░░		{}", BG, FG, BG, FG, BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░{}█▌{}░░{}███{}░░░░{}▐██{}░░{}▐█{}░░░░░░		{}", BG, FG, BG, FG, BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░░{}▀{}░░░{}███{}░░{}▄██{}░░░{}▀{}░░░░░░░		{}", BG, FG, BG, FG, BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░░░░░░{}███{}░░{}███{}░░░░░░░░░░░				{}", BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	     ░░░░░░░░░░░{}██▌{}░░{}▐██{}░░░░░░░░░░░				{}", BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	       ░░░░░░░░░{}██{}░░░░{}██{}░░░░░░░░░░				{}", BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	          ░░░░░{}▄██{}░░░░{}██▄{}░░░░░					{}", BG, FG, BG, FG, BG, RESET);
+	spdlog::info("{}	             ░░░░░░░░░░░░░░								{}", BG, RESET);
+	spdlog::info("{}	                  ░░░░									{}", BG, RESET);
+	spdlog::info("");
 }

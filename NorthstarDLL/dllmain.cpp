@@ -159,8 +159,13 @@ bool InitialiseNorthstar()
 	InitialiseConsole();
 	// initialise logging before most other things so that they can use spdlog and it have the proper formatting
 	InitialiseLogging();
-
 	InitialiseNorthstarPrefix();
+
+	// Write launcher version to log
+	spdlog::info("Northstar Launcher");
+	spdlog::info("Launcher Version: {}", version);
+	spdlog::info("Command Line: {}", GetCommandLineA());
+	spdlog::info("Using Profile: {}", GetNorthstarPrefix());
 
 	InitialiseSquirrelManagers();
 
@@ -173,9 +178,6 @@ bool InitialiseNorthstar()
 
 	InstallInitialHooks();
 	CreateLogFiles();
-
-	// Write launcher version to log
-	spdlog::info("NorthstarLauncher version: {}", version);
 
 	// run callbacks for any libraries that are already loaded by now
 	CallAllPendingDLLLoadCallbacks();
