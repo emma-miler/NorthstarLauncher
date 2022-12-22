@@ -226,7 +226,7 @@ void InitialiseLogging()
 	auto TOP = Color(100, 115, 156).ToANSIColor();
 	auto BG = Color(65, 70, 126).ToANSIColor();
 	auto FG = Color(255, 255, 255).ToANSIColor();
-	auto RESET = "\e[0m";
+	auto RESET = "\033[m";
 
 	// This is awful, sorry
 

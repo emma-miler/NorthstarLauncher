@@ -164,7 +164,6 @@ bool InitialiseNorthstar()
 	// Write launcher version to log
 	spdlog::info("Northstar Launcher");
 	spdlog::info("Launcher Version: {}", version);
-	spdlog::info("Command Line: {}", GetCommandLineA());
 	spdlog::info("Using Profile: {}", GetNorthstarPrefix());
 
 	InitialiseSquirrelManagers();
